@@ -34,7 +34,7 @@ namespace wyn
         template <class... Args>
         void emplace(Args &&...args)
         {
-            con_.emplace(args);
+            con_.emplace(args...);
         }
         void pop()
         {
