@@ -15,6 +15,7 @@ int main()
     t.insert(18);
     t.insert(14);
     t.insert(15);
+    std::cout << t.isBlance();
 
     return 0;
 }

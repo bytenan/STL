@@ -27,7 +27,7 @@ namespace wyn
     {
     public:
         tree()
-            : root_(nullptr), size_(0)
+            : root_(nullptr)
         {
         }
         bool insert(const T &data)
@@ -117,8 +117,44 @@ namespace wyn
             }
             return true;
         }
+        bool isBlance() const
+        {
+            return isBlance_(root_);
+        }
 
     private:
+        bool isBlance_(Node<T> *root) const
+        {
+            if (!root)
+            {
+                return true;
+            }
+            if (root->left_ && !(root->left_->data_ < root->data_))
+            {
+                return false;
+            }
+            if (root->right_ && !(root->right_->data_ > root->data_))
+            {
+                return false;
+            }
+            if (!(root->bf_ == -1 || root->bf_ == 0 || root->bf_ == 1))
+            {
+                return false;
+            }
+            if (abs(height(root->left_) - height(root->right_)) != abs(root->bf_))
+            {
+                return false;
+            }
+            return true && isBlance_(root->left_) && isBlance_(root->right_);
+        }
+        int height(Node<T> *root) const
+        {
+            if (!root)
+            {
+                return 0;
+            }
+            return 1 + std::max(height(root->left_), height(root->right_));
+        }
         void rotateR(Node<T> *parent)
         {
             Node<T> *grandparent = parent->parent_;
@@ -244,6 +280,5 @@ namespace wyn
 
     private:
         Node<T> *root_;
-        size_t size_;
     };
 }
