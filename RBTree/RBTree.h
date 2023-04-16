@@ -25,6 +25,128 @@ namespace wyn
         }
     };
 
+    template <class T, class Ref, class Ptr>
+    class iterator
+    {
+    public:
+        typedef iterator<T, Ref, Ptr> Self;
+        Node<T> *pnode_;
+        iterator(Node<T> *node)
+            : pnode_(node)
+        {
+        }
+        Self &operator++()
+        {
+            if (pnode_->right_)
+            {
+                Node<T> *cur = pnode_->right_;
+                while (cur->left_)
+                {
+                    cur = cur->left_;
+                }
+                pnode_ = cur;
+            }
+            else
+            {
+                Node<T> *parent = pnode_->parent_;
+                while (parent && parent->right_ == pnode_)
+                {
+                    pnode_ = parent;
+                    parent = pnode_->parent_;
+                }
+                pnode_ = parent;
+            }
+            return *this;
+        }
+        Self &operator++(int)
+        {
+            Self tmp = *this;
+            if (pnode_->right_)
+            {
+                Node<T> *cur = pnode_->right_;
+                while (cur->left_)
+                {
+                    cur = cur->left_;
+                }
+                pnode_ = cur;
+            }
+            else
+            {
+                Node<T> *parent = pnode_->parent_;
+                while (parent && parent->right_ == pnode_)
+                {
+                    pnode_ = parent;
+                    parent = pnode_->parent_;
+                }
+                pnode_ = parent;
+            }
+            return tmp;
+        }
+        Self &operator--()
+        {
+            if (pnode_->left_)
+            {
+                Node<T> *cur = pnode_->left_;
+                while (cur->right_)
+                {
+                    cur = cur->right_;
+                }
+                pnode_ = cur;
+            }
+            else
+            {
+                Node<T> *parent = pnode_->parent_;
+                while (parent && parent->left_ == pnode_)
+                {
+                    pnode_ = parent;
+                    parent = pnode_->parent_;
+                }
+                pnode_ = parent;
+            }
+            return *this;
+        }
+        Self &operator--(int)
+        {
+            Self tmp = *this;
+            if (pnode_->left_)
+            {
+                Node<T> *cur = pnode_->left_;
+                while (cur->right_)
+                {
+                    cur = cur->right_;
+                }
+                pnode_ = cur;
+            }
+            else
+            {
+                Node<T> *parent = pnode_->parent_;
+                while (parent && parent->left_ == pnode_)
+                {
+                    pnode_ = parent;
+                    parent = pnode_->parent_;
+                }
+                pnode_ = parent;
+            }
+            return tmp;
+        }
+        Ref operator*()
+        {
+            return pnode_->data_;
+        }
+        Ptr operator->()
+        {
+            return &pnode_->data_;
+        }
+        bool operator==(const Self &x) const
+        {
+            return pnode_ == x.pnode_;
+        }
+        bool operator!=(const Self &x) const
+        {
+            return pnode_ != x.pnode_;
+        }
+    };
+
     template <class T>
     class tree
     {
