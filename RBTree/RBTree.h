@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <utility>
 
 namespace wyn
 {
@@ -10,28 +11,28 @@ namespace wyn
         BLACK
     };
 
-    template <class T>
+    template <class Value>
     class Node
     {
     public:
-        T data_;
+        Value value_;
         Color color_;
-        Node<T> *parent_;
-        Node<T> *left_;
-        Node<T> *right_;
+        Node<Value> *parent_;
+        Node<Value> *left_;
+        Node<Value> *right_;
         Node(const T &data)
-            : data_(data), color_(RED), parent_(nullptr), left_(nullptr), right_(nullptr)
+            : data_(value_), color_(RED), parent_(nullptr), left_(nullptr), right_(nullptr)
         {
         }
     };
 
-    template <class T, class Ref, class Ptr>
+    template <class Value, class Ref, class Ptr>
     class iterator
     {
     public:
-        typedef iterator<T, Ref, Ptr> Self;
-        Node<T> *pnode_;
-        iterator(Node<T> *node)
+        typedef iterator<Value, Ref, Ptr> Self;
+        Node<Value> *pnode_;
+        iterator(Node<Value> *node)
             : pnode_(node)
         {
         }
@@ -39,7 +40,7 @@ namespace wyn
         {
             if (pnode_->right_)
             {
-                Node<T> *cur = pnode_->right_;
+                Node<Value> *cur = pnode_->right_;
                 while (cur->left_)
                 {
                     cur = cur->left_;
@@ -48,7 +49,7 @@ namespace wyn
             }
             else
             {
-                Node<T> *parent = pnode_->parent_;
+                Node<Value> *parent = pnode_->parent_;
                 while (parent && parent->right_ == pnode_)
                 {
                     pnode_ = parent;
@@ -63,7 +64,7 @@ namespace wyn
             Self tmp = *this;
             if (pnode_->right_)
             {
-                Node<T> *cur = pnode_->right_;
+                Node<Value> *cur = pnode_->right_;
                 while (cur->left_)
                 {
                     cur = cur->left_;
@@ -72,7 +73,7 @@ namespace wyn
             }
             else
             {
-                Node<T> *parent = pnode_->parent_;
+                Node<Value> *parent = pnode_->parent_;
                 while (parent && parent->right_ == pnode_)
                 {
                     pnode_ = parent;
@@ -86,7 +87,7 @@ namespace wyn
         {
             if (pnode_->left_)
             {
-                Node<T> *cur = pnode_->left_;
+                Node<Value> *cur = pnode_->left_;
                 while (cur->right_)
                 {
                     cur = cur->right_;
@@ -95,7 +96,7 @@ namespace wyn
             }
             else
             {
-                Node<T> *parent = pnode_->parent_;
+                Node<Value> *parent = pnode_->parent_;
                 while (parent && parent->left_ == pnode_)
                 {
                     pnode_ = parent;
@@ -110,7 +111,7 @@ namespace wyn
             Self tmp = *this;
             if (pnode_->left_)
             {
-                Node<T> *cur = pnode_->left_;
+                Node<Value> *cur = pnode_->left_;
                 while (cur->right_)
                 {
                     cur = cur->right_;
@@ -119,7 +120,7 @@ namespace wyn
             }
             else
             {
-                Node<T> *parent = pnode_->parent_;
+                Node<Value> *parent = pnode_->parent_;
                 while (parent && parent->left_ == pnode_)
                 {
                     pnode_ = parent;
@@ -147,43 +148,72 @@ namespace wyn
         }
     };
 
-    template <class T>
+    template <class Key, class Value, class KeyOfValue, class Compare>
     class tree
     {
     public:
+        typedef iterator<Value, const Value &, const Value *> const_iterator;
+        typedef iterator<Value, Value &, Value *> iterator;
+        iterator begin()
+        {
+            Node<Value> *min = root_;
+            while (min && min->left_)
+            {
+                min = min->left_;
+            }
+            return iterator(min);
+        }
+        iterator end()
+        {
+            return iterator(nullptr);
+        }
+        const_iterator begin() const
+        {
+            Node<Value> *min = root_;
+            while (min && min->left_)
+            {
+                min = min->left_;
+            }
+            return const_iterator(min);
+        }
+        const_iterator end() const
+        {
+            return const_iterator(nullptr);
+        }
         tree()
             : root_(nullptr)
         {
         }
-        bool insert(const T &data)
+        pair<iterator, bool> insert(const Value &value)
         {
             if (!root_)
             {
-                root_ = new Node<T>(data);
+                root_ = new Node<Value>(value);
                 root_->color_ = BLACK;
-                return true;
+                return pair(iterator(root_), true);
             }
-            Node<T> *parent = nullptr;
-            Node<T> *cur = root_;
+            Node<Value> *parent = nullptr;
+            Node<Value> *cur = root_;
             while (cur)
             {
-                if (cur->data_ < data)
+                if (Compare()(KeyOfValue()(cur->value_), KeyOfValue()(value))) // cur->data_< data
                 {
                     parent = cur;
                     cur = cur->right_;
                 }
-                else if (cur->data_ > data)
+                else if (Compare()(KeyOfValue()(value), KeyOfValue()(cur->value_))) // data < cur->data_
                 {
                     parent = cur;
                     cur = cur->left_;
                 }
                 else
                 {
-                    return false;
+                    return pair(iterator(cur), false);
                 }
             }
-            cur = new Node<T>(data);
-            if (parent->data_ < data)
+            cur = new Node<Value>(value);
+            Node<Value> *res = cur;
+            if (Compare()(KeyOfValue()(parent->value_), KeyOfValue()(value))) // parent->data < data
             {
                 parent->right_ = cur;
             }
@@ -194,10 +224,10 @@ namespace wyn
             cur->parent_ = parent;
             while (parent && parent->color_ == RED)
             {
-                Node<T> *grandparent = parent->parent_;
+                Node<Value> *grandparent = parent->parent_;
                 if (grandparent->left_ == parent)
                 {
-                    Node<T> *uncle = grandparent->right_;
+                    Node<Value> *uncle = grandparent->right_;
                     if (uncle && uncle->color_ == RED)
                     {
                         grandparent->color_ = RED;
@@ -225,7 +255,7 @@ namespace wyn
                 }
                 else
                 {
-                    Node<T> *uncle = grandparent->left_;
+                    Node<Value> *uncle = grandparent->left_;
                     if (uncle && uncle->color_ == RED)
                     {
                         grandparent->color_ = RED;
@@ -253,67 +283,55 @@ namespace wyn
                 }
             }
             root_->color_ = BLACK;
-            return true;
+            return pair(iterator(res), true);
         }
-
-        bool IsValidRBTree()
+        iterator find(const Key &key)
         {
-            Node<T> *pRoot = root_;
-            // 空树也是红黑树
-            if (nullptr == pRoot)
-                return true;
-            // 检测根节点是否满足情况
-            if (BLACK != pRoot->color_)
+            Node<Value> *cur = root_;
+            while (cur)
             {
-                std::cout << "违反红黑树性质二：根节点必须为黑色" << std::endl;
-                return false;
-            }
-            // 获取任意一条路径中黑色节点的个数
-            size_t blackCount = 0;
-            Node<T> *pCur = pRoot;
-            while (pCur)
-            {
-                if (BLACK == pCur->color_)
-                    blackCount++;
-                pCur = pCur->left_;
-            }
-            // 检测是否满足红黑树的性质，k用来记录路径中黑色节点的个数
-            size_t k = 0;
-            return _IsValidRBTree(pRoot, k, blackCount);
-        }
-
-        bool _IsValidRBTree(Node<T> *pRoot, size_t k, const size_t blackCount)
-        {
-            // 走到null之后，判断k和black是否相等
-            if (nullptr == pRoot)
-            {
-                if (k != blackCount)
+                if (Compare()(key, KeyOfValue()(cur->value_)))
                 {
-                    std::cout << "违反性质四：每条路径中黑色节点的个数必须相同" << std::endl;
-                    return false;
+                    cur = cur->left_;
                 }
-                return true;
+                else if (Compare()(KeyOfValue()(cur->value_), key))
+                {
+                    cur = cur->right_;
+                }
+                else
+                {
+                    return iterator(cur);
+                }
             }
-            // 统计黑色节点的个数
-            if (BLACK == pRoot->color_)
-                k++;
-            // 检测当前节点与其双亲是否都为红色
-            Node<T> *pParent = pRoot->parent_;
-            if (pParent && RED == pParent->color_ && RED == pRoot->color_)
+            return end();
+        }
+        const_iterator find(const Key &key) const
+        {
+            Node<Value> *cur = root_;
+            while (cur)
             {
-                std::cout << "违反性质三：没有连在一起的红色节点" << std::endl;
-                return false;
+                if (Compare()(key, KeyOfValue()(cur->value_)))
+                {
+                    cur = cur->left_;
+                }
+                else if (Compare()(KeyOfValue()(cur->value_), key))
+                {
+                    cur = cur->right_;
+                }
+                else
+                {
+                    return const_iterator(cur);
+                }
             }
-            return _IsValidRBTree(pRoot->left_, k, blackCount) &&
-                   _IsValidRBTree(pRoot->right_, k, blackCount);
+            return end();
         }
 
     private:
-        void rotateR(Node<T> *parent)
+        void rotateR(Node<Value> *parent)
         {
-            Node<T> *grandparent = parent->parent_;
-            Node<T> *childR = parent->right_;
-            Node<T> *childRL = childR->left_;
+            Node<Value> *grandparent = parent->parent_;
+            Node<Value> *childR = parent->right_;
+            Node<Value> *childRL = childR->left_;
             childR->left_ = parent;
             parent->parent_ = childR;
             parent->right_ = childRL;
@@ -339,11 +357,11 @@ namespace wyn
                 root_ = childR;
             }
         }
-        void rotateL(Node<T> *parent)
+        void rotateL(Node<Value> *parent)
         {
-            Node<T> *grandparent = parent->parent_;
-            Node<T> *childL = parent->left_;
-            Node<T> *childLR = childL->right_;
+            Node<Value> *grandparent = parent->parent_;
+            Node<Value> *childL = parent->left_;
+            Node<Value> *childLR = childL->right_;
             childL->right_ = parent;
             parent->parent_ = childL;
             parent->left_ = childLR;
@@ -371,6 +389,6 @@ namespace wyn
         }
 
     private:
-        Node<T> *root_;
+        Node<Value> *root_;
     };
 }
