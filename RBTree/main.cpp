@@ -1,18 +1,29 @@
 #include <iostream>
 #include <utility>
 #include "RBTree.h"
+#include "Set.h"
+#include "Map.h"
 
-using namespace wyn;
+void func(const wyn:: map<int, int> &m)
+{
+	auto it = m.begin();
+	// it->second = 1000;
+}
 
 int main()
 {
-    // tree<int, int> t;
-    // srand(time(nullptr));
-    // const size_t N = 100000;
-    // for (size_t i = 0; i < N; ++i)
-    // {
-    //     size_t x = rand();
-    //     t.insert(x, x);
-    // }
+    wyn::map<int, int> m;
+    for (int i = 0; i < 10; ++i)
+    {
+    	m[i] = i + 10;
+    }
+
+    for (auto e : m)
+    {
+    	std::cout << e.first << " : " << e.second << std::endl;
+    }
+
+    func(m);
+
     return 0;
 }
