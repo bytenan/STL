@@ -4,7 +4,7 @@
 #include <vector>
 #include <utility>
 
-namespace wyn
+namespace closed
 {
     enum State
     {
@@ -90,7 +90,7 @@ namespace wyn
             ++size_;
             return true;
         }
-        Data<Key, Value> *find(const Key &key) 
+        Data<Key, Value> *find(const Key &key)
         {
             size_t pos = HashFcn()(key) % table_.size();
             while (table_[pos].state_ != EMPTY)
@@ -130,6 +130,85 @@ namespace wyn
 
     private:
         std::vector<Data<Key, Value>> table_;
+        size_t size_;
+    };
+}
+
+namespace open
+{
+    template <class Key, class Value>
+    class Node
+    {
+    public:
+        std::pair<Key, Value> kv_;
+        Node<Key, Value> *next_;
+        Node(const std::pair<Key, Value> &kv)
+            : kv_(kv), next_(nullptr)
+        {
+        }
+    };
+    template <class Key, class Value, class HashFcn>
+    class hash
+    {
+    public:
+        hash()
+            : size_(0)
+        {
+            table_.resize(10);
+        }
+        bool insert(const std::pair<Key, Value> &kv)
+        {
+            if (find(HashFcn()(kv.first)))
+            {
+                return false;
+            }
+            if (size_ == table_.size())
+            {
+                std::vector<Node<Key, Value> *> tmp;
+                for (auto &head : table_)
+                {
+                    while (head)
+                    {
+                        Node<Key, Value> *next = head->next_;
+                        size_t pos = HashFcn()(head->kv_.first) % table_.size();
+                        head->next = tmp[pos];
+                        tmp[pos] = head;
+                        head = next;
+                    }
+                    head = nullptr;
+                }
+                table_.swap(tmp);
+            }
+            size_t pos = HashFcn()(kv.first) % table_.size();
+            Node<Key, Value> *node = new Node<Key, Value>(kv);
+            node->next_ = table_[pos];
+            table_[pos] = node;
+            ++size_;
+            return true;
+        }
+
+        Node<Key, Value> *find(const Key &key) 
+        {
+            size_t pos = HashFcn()(key) % table_.size();
+            Node<Key, Value> * cur = table_[pos];
+            while (cur)
+            {
+                if (cur->kv_.first == key)
+                {
+                    return cur;
+                }
+                cur = cur->next_;
+            }
+            return nullptr;
+        }
+
+        void swap(hash<Key, Value, HashFcn> &x)
+        {
+            std::swap(table_, x.table_);
+            std::swap(size_, x.size_);
+        }
+    private:
+        std::vector<Node<Key, Value> *> table_;
         size_t size_;
     };
 }

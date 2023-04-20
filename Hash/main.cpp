@@ -3,7 +3,7 @@
 
 int main()
 {
-    wyn::hash<int, int> h;
+    closed::hash<int, int> h;
     h.insert(std::pair<int, int>(1, 10));
     h.insert(std::pair<int, int>(2, 20));
     h.insert(std::pair<int, int>(3, 30));
