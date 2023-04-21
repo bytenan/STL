@@ -136,64 +136,174 @@ namespace closed
 
 namespace open
 {
-    template <class Key, class Value>
+    template <class Value>
     class Node
     {
     public:
-        std::pair<Key, Value> kv_;
-        Node<Key, Value> *next_;
-        Node(const std::pair<Key, Value> &kv)
-            : kv_(kv), next_(nullptr)
+        Value value_;
+        Node<Value> *next_;
+        Node(const Value &value)
+            : value_(value), next_(nullptr)
         {
         }
     };
-    template <class Key, class Value, class HashFcn>
+
+    template <class Key, class Value, class HashFcn, class ExtractKey>
+    class hash;
+
+    template <class Key, class Value, class HashFcn, class ExtractKey>
+    class iterator
+    {
+    public:
+        typedef iterator<Key, Value, HashFcn, ExtractKey> Self;
+        typedef Value &Ref;
+        typedef Value *Ptr;
+
+        hash<Key, Value, HashFcn, ExtractKey> *phash_;
+        Node<Value> *pvalue_;
+        iterator(hash<Key, Value, HashFcn, ExtractKey> *phash, Node<Value> *pvalue)
+            : phash_(phash), pvalue_(pvalue)
+        {
+        }
+        Ref operator*() const
+        {
+            return pvalue_->value_;
+        }
+        Ptr operator->() const
+        {
+            return &pvalue_->value_;
+        }
+        Self &operator++()
+        {
+            if (pvalue_->next_)
+            {
+                pvalue_ = pvalue_->next_;
+            }
+            else
+            {
+                size_t pos = HashFcn()(ExtractKey()(pvalue_->value_)) % phash_->table_.size();
+                ++pos;
+                while (pos < phash_->table_.size())
+                {
+                    if (phash_->table_[pos])
+                    {
+                        pvalue_ = phash_->table_[pos];
+                        break;
+                    }
+                    ++pos;
+                }
+                if (pos == phash_->table_.size())
+                {
+                    pvalue_ = nullptr;
+                }
+            }
+            return *this;
+        }
+        Self &operator--()
+        {
+            size_t pos = HashFcn()(ExtractKey()(pvalue_->value_)) % phash_->table_.size();
+            Node<Value> *prev = nullptr;
+            Node<Value> *cur = phash_->table_[pos];
+            while (cur != pvalue_)
+            {
+                prev = cur;
+                cur = cur->next_;
+            }
+            if (prev)
+            {
+                pvalue_ = prev;
+            }
+            else
+            {
+                while (--pos)
+                {
+                    if (phash_->table_[pos])
+                    {
+                        pvalue_ = phash_->table_[pos];
+                    }
+                }
+                if (pos == 0 && !phash_->table_[pos])
+                {
+                    pvalue_ = nullptr;
+                }
+            }
+            return *this;
+        }
+        bool operator==(const Self &x) const
+        {
+            return pvalue_ == x.pvalue_;
+        }
+        bool operator!=(const Self &x) const
+        {
+            return pvalue_ != x.pvalue_;
+        }
+    };
+
+    template <class Key, class Value, class HashFcn, class ExtractKey>
     class hash
     {
     public:
+        friend iterator<Key, Value, HashFcn, ExtractKey>;
+        typedef iterator<Key, Value, HashFcn, ExtractKey> iterator;
+
+        iterator begin()
+        {
+            for (size_t i = 0; i < table_.size(); ++i)
+            {
+                if (table_[i])
+                {
+                    return iterator(this, table_[i]);
+                }
+            }
+            return end();
+        }
+        iterator end()
+        {
+            return iterator(this, nullptr);
+        }
         hash()
             : size_(0)
         {
             table_.resize(10);
         }
-        bool insert(const std::pair<Key, Value> &kv)
+        bool insert(const Value &value)
         {
-            if (find(HashFcn()(kv.first)))
+            if (find(HashFcn()(ExtractKey()(value))))
             {
                 return false;
             }
             if (size_ == table_.size())
             {
-                std::vector<Node<Key, Value> *> tmp;
-                for (auto &head : table_)
+                std::vector<Node<Value> *> tmp;
+                for (Node<Value> *&cur : table_)
                 {
-                    while (head)
+                    while (cur)
                     {
-                        Node<Key, Value> *next = head->next_;
-                        size_t pos = HashFcn()(head->kv_.first) % table_.size();
-                        head->next = tmp[pos];
-                        tmp[pos] = head;
-                        head = next;
+                        Node<Value> *next = cur->next_;
+                        size_t pos = HashFcn()(ExtractKey()(cur->value_)) % table_.size();
+                        cur->next_ = tmp[pos];
+                        tmp[pos] = cur;
+                        cur = next;
                     }
-                    head = nullptr;
+                    cur = nullptr;
                 }
                 table_.swap(tmp);
             }
-            size_t pos = HashFcn()(kv.first) % table_.size();
-            Node<Key, Value> *node = new Node<Key, Value>(kv);
+            size_t pos = HashFcn()(ExtractKey()(value)) % table_.size();
+            Node<Value> *node = new Node<Value>(value);
             node->next_ = table_[pos];
             table_[pos] = node;
             ++size_;
             return true;
         }
 
-        Node<Key, Value> *find(const Key &key) 
+        Node<Value> *find(const Key &key)
         {
-            size_t pos = HashFcn()(key) % table_.size();
-            Node<Key, Value> * cur = table_[pos];
+            size_t pos = HashFcn()(ExtractKey()(key)) % table_.size();
+            Node<Value> *cur = table_[pos];
             while (cur)
             {
-                if (cur->kv_.first == key)
+                if (ExtractKey()(cur->value_) == key)
                 {
                     return cur;
                 }
@@ -202,13 +312,14 @@ namespace open
             return nullptr;
         }
 
-        void swap(hash<Key, Value, HashFcn> &x)
+        void swap(hash<Key, Value, HashFcn, ExtractKey> &x)
         {
             std::swap(table_, x.table_);
             std::swap(size_, x.size_);
         }
+
     private:
-        std::vector<Node<Key, Value> *> table_;
+        std::vector<Node<Value> *> table_;
         size_t size_;
     };
 }
