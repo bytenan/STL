@@ -1,64 +1,54 @@
 #include <iostream>
-#include "HashTable.h"
-#include <list>
+#include "Unordered_set.h"
+#include "Unordered_map.h"
 
-template <class Value>
-class HashFcn
+void func(const wyn_map::unordered_map<int, int> &m)
 {
-public:
-    Value operator()(const Value &value) const
+    // for (auto &e : m)
+    // {
+    //     e.first = 10;
+    //     e.second = 20;
+    // }
+    for (auto &e : m)
     {
-        return value;
+        std::cout << e.first << " : " << e.second << std::endl;
     }
-};
-
-template <class Value>
-class ExtractKey
-{
-public:
-    size_t operator()(const Value &value) const
-    {
-        return (size_t)value;
-    }
-};
+}
 
 int main()
 {
-    open::hash<int, int, HashFcn<int>, ExtractKey<int>> h;
-    h.insert(1);
-    h.insert(2);
-    h.insert(3);
-    h.insert(4);
-    h.insert(11);
-    h.insert(13);
-    h.insert(12);
-    h.insert(111);
-    h.insert(333);
+    wyn_set::unordered_set<int> s;
+    s.insert(1);
+    s.insert(2);
+    s.insert(3);
+    s.insert(4);
+    s.insert(11);
+    s.insert(22);
+    s.insert(111);
+    s.insert(45);
+    for (auto &e : s)
+    {
+        std::cout << e << std::endl;
+    }
 
-    auto it = h.begin();
-
-    std::list<int> l;
-    l.push_back(1);
-    l.push_back(2);
-    l.push_back(3);
-
-    auto itl = l.begin();
-    std::cout << *itl << std::endl;
-    std::cout << *(itl.operator->()) << std::endl;
-    
-
-    std::cout << it.operator->() << std::endl;
-    std::cout << *(it.operator->()) << std::endl;
-    std::cout << it.operator*() << std::endl;
-    std::cout << *it << std::endl;
-    // ++it;
-    // std::cout << *it << std::endl;
-
-    // for (auto & e : h)
+    // wyn_map::unordered_map<int, int> m;
+    // m.insert(std::pair<int, int>(1, 10));
+    // m.insert(std::pair<int, int>(2, 20));
+    // m.insert(std::pair<int, int>(3, 30));
+    // m.insert(std::pair<int, int>(4, 40));
+    // m.insert(std::pair<int, int>(11, 110));
+    // m.insert(std::pair<int, int>(22, 220));
+    // m.insert(std::pair<int, int>(111, 1110));
+    // // func(m);
+    // for (auto &e : m)
     // {
-    //     std::cout << e << std::endl;
+    //     // e.first = 10;
+    //     e.second = 20;
     // }
-    
+    // for (auto &e : m)
+    // {
+    //     std::cout << e.first << " : " << e.second << std::endl;
+    // }
 
     return 0;
 }
